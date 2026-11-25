@@ -313,7 +313,19 @@ function log(who: Who, text: string, tag?: string) {
   head.className = 'head';
   const name = document.createElement('span');
   name.className = 'who';
-  name.textContent = LABEL[who];
+  if (who === 'system' || who === 'steer') name.textContent = LABEL[who];
+  else {
+    // Each musician wears a "HELLO my name is" sticker, written by hand and stuck on a little crooked (the app's one human quirk).
+    name.classList.add('sticker');
+    const hello = document.createElement('span');
+    hello.className = 'hello';
+    hello.setAttribute('aria-hidden', 'true');
+    hello.textContent = 'HELLO my name is';
+    const nm = document.createElement('span');
+    nm.className = 'nm';
+    nm.textContent = LABEL[who];
+    name.append(hello, nm);
+  }
   head.append(name);
   if (tag) {
     const tagEl = document.createElement('span');
