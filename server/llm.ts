@@ -2,10 +2,19 @@ import OpenAI from 'openai';
 import { config } from './config.js';
 
 let client: OpenAI | undefined;
+let clientFor = '';
 
-/** OpenAI-compatible client pointed at AIAND_BASE_URL. Created lazily so missing env vars give a clear error. */
+/**
+ * OpenAI-compatible client pointed at AIAND_BASE_URL (or the visitor's own provider in the browser build). Created lazily so missing settings give a clear error, and rebuilt when the settings change.
+ * In the browser the key belongs to the visitor and goes only to the provider they chose, hence dangerouslyAllowBrowser.
+ */
 export function getClient(): OpenAI {
-  client ??= new OpenAI({ baseURL: config.baseURL, apiKey: config.apiKey });
+  const baseURL = config.baseURL;
+  const apiKey = config.apiKey;
+  if (!client || clientFor !== `${baseURL}\n${apiKey}`) {
+    client = new OpenAI({ baseURL, apiKey, dangerouslyAllowBrowser: typeof window !== 'undefined' });
+    clientFor = `${baseURL}\n${apiKey}`;
+  }
   return client;
 }
 

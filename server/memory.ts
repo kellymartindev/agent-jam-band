@@ -1,43 +1,14 @@
 import { VOX_ENABLED } from '../shared/flags.js';
-import { z } from 'zod';
-import { SECTION_NAMES } from '../shared/arrangement.js';
-import type { BassBar, ChordBar, DrumBar, GraphLink, GraphNode, GraphPayload, MelodyBar, VoxBar } from '../shared/types.js';
+import type { GraphLink, GraphNode, GraphPayload } from '../shared/types.js';
 import { query, toNum } from './graph.js';
+import { LOCKS, MEMORY_AGENTS, motifId, summarize, type BandMemoryItem, type Echo, type MemoryAgent, type MemoryCtx } from './memory-core.js';
+
+export * from './memory-core.js';
 
 /**
  * The band's memory: every agent's phrase is stored in Neo4j as a Motif, and later agents are shown a few recent motifs from the other players so they can call one back.
  * Everything here is best effort: when Neo4j is unavailable, recall gives an empty list, writes are dropped and the graph is empty. Nothing throws.
  */
-
-export type MemoryAgent = 'drums' | 'bass' | 'keys' | 'melody' | 'vox';
-export const MEMORY_AGENTS: readonly MemoryAgent[] = VOX_ENABLED ? ['drums', 'bass', 'keys', 'melody', 'vox'] : ['drums', 'bass', 'keys', 'melody'];
-
-const idPart = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
-export const sessionIdSchema = idPart;
-export const memoryCtxSchema = z.object({
-  sessionId: idPart,
-  block: z.number().int().min(1).max(100000),
-  /** The song section this block belongs to: its name and the song bar it started on (so two drops are two Section nodes) */
-  section: z.object({ name: z.enum(SECTION_NAMES), startBar: z.number().int().min(1).max(100000) }).optional(),
-});
-export type MemoryCtx = z.infer<typeof memoryCtxSchema>;
-
-export interface Echo {
-  id: string;
-  reason: string;
-}
-
-export interface BandMemoryItem {
-  id: string;
-  agent: string;
-  block: number;
-  summary: string;
-}
-
-/** Each part answers the one it is built on: bass locks to the kick, keys sit on the bass, the melody sits on the chords, and the vox chops the melody. */
-const LOCKS: Partial<Record<MemoryAgent, MemoryAgent>> = { bass: 'drums', keys: 'bass', melody: 'keys', vox: 'melody' };
-
-export const motifId = (sessionId: string, block: number, agent: string) => `${sessionId}:${block}:${agent}`;
 
 /** Blocks the listener steered away from before they played. A late write for one of these is dropped, and what was already written is deleted. Block numbers are never reused, so this is safe. */
 const discarded = new Map<string, Set<number>>();
@@ -45,46 +16,6 @@ const isDiscarded = (sid: string, block: number) => discarded.get(sid)?.has(bloc
 
 const RECALL_TIMEOUT_MS = 1500;
 const FLUSH_TIMEOUT_MS = 2000;
-const MAX_SUMMARY = 240;
-
-// ---------- Describing a phrase (this text is what other agents read as band memory) ----------
-
-const stepsOf = (row: number[]) => row.flatMap((v, i) => (v ? [i] : []));
-
-export function describeDrums(bars: DrumBar[]): string {
-  const b = bars[0];
-  if (!b) return '';
-  return `bar 1: kick@${stepsOf(b.kick).join(',') || '-'} snare@${stepsOf(b.snare).join(',') || '-'} hats x${stepsOf(b.hat).length}`;
-}
-
-export function describeBass(bars: BassBar[]): string {
-  const notes = (bars.find((b) => b.length) ?? []).slice(0, 6);
-  return `bar 1: ${notes.map((n) => `${n.note}@${n.step}`).join(' ')}`;
-}
-
-export function describeKeys(bars: ChordBar[]): string {
-  const chords = (bars.find((b) => b.length) ?? []).slice(0, 3);
-  return `bar 1: ${chords.map((c) => `[${c.notes.join(' ')}]@${c.step}`).join(' ')}`;
-}
-
-export function describeMelody(bars: MelodyBar[]): string {
-  const i = bars.findIndex((b) => b.length);
-  if (i < 0) return 'rests';
-  return `bar ${i + 1}: ${bars[i].slice(0, 8).map((n) => `${n.note}@${n.step}`).join(' ')}`;
-}
-
-export function describeVox(bars: VoxBar[]): string {
-  const i = bars.findIndex((b) => b.length);
-  if (i < 0) return 'silent';
-  return `bar ${i + 1}: ${bars[i].slice(0, 8).map((n) => `${n.note}/${n.vowel}@${n.step}`).join(' ')}`;
-}
-
-export function summarize(agent: MemoryAgent, bars: unknown[], why: string, fallback: boolean): string {
-  const b = bars as never[];
-  const detail = agent === 'drums' ? describeDrums(b) : agent === 'bass' ? describeBass(b) : agent === 'keys' ? describeKeys(b) : agent === 'vox' ? describeVox(b) : describeMelody(b);
-  const lead = fallback || !why ? '(repeated an earlier phrase)' : why;
-  return `${lead} | ${detail}`.slice(0, MAX_SUMMARY);
-}
 
 // ---------- Writes (serialised, so an edge never points at a motif that is not written yet) ----------
 

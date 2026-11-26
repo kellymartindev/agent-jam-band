@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { VOX_ENABLED } from '../shared/flags.js';
 import express from 'express';
 import { z } from 'zod';

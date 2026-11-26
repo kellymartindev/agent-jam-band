@@ -20,6 +20,8 @@ import { TIME_SIGNATURES, meterOf, type TimeSignature } from '../shared/meter';
 import { VOX_ENABLED } from '../shared/flags';
 import { getRig, type StudioKey } from './audio';
 import { createGraphPanel, type EchoEvent } from './graph';
+import { localGraph, localPost } from './local/api';
+import { hasKey, inPage, mountKeyControl } from './local/byok';
 import { Pipeline, type Block } from './pipeline';
 import { stepEvents, strongSteps } from './steps';
 
@@ -247,6 +249,11 @@ const vibeEl = document.querySelector<HTMLInputElement>('#vibe')!;
 const bpmEl = document.querySelector<HTMLInputElement>('#bpm')!;
 const meterEl = document.querySelector<HTMLSelectElement>('#meter')!;
 const startBtn = document.querySelector<HTMLButtonElement>('#start')!;
+void mountKeyControl(document.querySelector<HTMLButtonElement>('#rec')!);
+void inPage().then((local) => {
+  const sub = document.querySelector('.h2-sub');
+  if (local && sub?.textContent?.includes('Neo4j')) sub.textContent = '· in your browser';
+});
 const stopBtn = document.querySelector<HTMLButtonElement>('#stop')!;
 const nowEl = document.querySelector<HTMLParagraphElement>('#now')!;
 const recBtn = document.querySelector<HTMLButtonElement>('#rec')!;
@@ -536,6 +543,10 @@ function readOverrides(): ConductorOverrides {
 // ---------- Talking to the agents ----------
 
 async function post<T>(url: string, body: unknown, signal?: AbortSignal): Promise<T> {
+  if (await inPage()) {
+    if (signal?.aborted) throw new Error('aborted');
+    return localPost<T>(url, body);
+  }
   const res = await fetch(url, {
     signal,
     method: 'POST',
@@ -630,9 +641,13 @@ async function refreshGraph(s: Session) {
   try {
     do {
       graphDirty = false;
-      const res = await fetch(`/api/graph?session=${encodeURIComponent(s.id)}`);
-      if (!res.ok) break;
-      const payload = (await res.json()) as GraphPayload;
+      let payload: GraphPayload;
+      if (await inPage()) payload = await localGraph(s.id);
+      else {
+        const res = await fetch(`/api/graph?session=${encodeURIComponent(s.id)}`);
+        if (!res.ok) break;
+        payload = (await res.json()) as GraphPayload;
+      }
       if (session !== s) break;
       for (const e of graphPanel.update(payload)) announceEcho(e);
     } while (graphDirty);
@@ -924,6 +939,7 @@ async function start() {
   resetTokens();
   metaBpmEl.textContent = metaKeyEl.textContent = metaMeterEl.textContent = metaSoundEl.textContent = '–';
   log('system', `Vibe: "${vibe}".`);
+  if ((await inPage()) && !hasKey()) log('system', 'House band tonight: no API key, so the players stick to their built-in parts. Add yours with the House band button for the AI band.');
 
   try {
     await Tone.start(); // must run inside the click so the browser allows audio

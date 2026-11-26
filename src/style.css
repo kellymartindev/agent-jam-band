@@ -310,3 +310,21 @@ input, textarea, .graph, #graph, .memory, .mem-canvas, .steer, .steer-row { bord
 .lineup .msg { padding: 0; border: 0; background: none; }
 .chat:has(#log:not(:empty)) .lineup { display: none; }
 .steer-box, .steer-box input { border-radius: 0 !important; }
+
+/* Bring your own key (kellymartin.dev build) */
+.key-btn { white-space: nowrap; }
+.key-dialog { max-width: 34rem; width: calc(100% - 2rem); background: var(--paper, #E8DFCC); color: #1B1713; border: 0; padding: 1.6rem; box-shadow: 0 1rem 3rem rgba(0, 0, 0, .6); }
+.key-dialog::backdrop { background: rgba(18, 16, 13, .75); }
+dialog.key-dialog form.key-form h2 { margin: 0 0 .6rem !important; font: 800 1.6rem/1 'Archivo', sans-serif; font-stretch: 70%; text-transform: uppercase; letter-spacing: 0; color: #1B1713; }
+.key-dialog .key-form p { margin: 0 0 .7rem; font: 400 .85rem/1.5 'Courier Prime', ui-monospace, monospace; color: #3D352C; }
+.key-form label { display: flex; flex-direction: column; gap: .25rem; margin: .7rem 0 0; font: 700 .75rem/1.2 'Courier Prime', ui-monospace, monospace; letter-spacing: .04em; color: #1B1713; }
+.key-form input, .key-form select { font: 400 .95rem 'Archivo', sans-serif; padding: .5rem .6rem; border: 1px solid #6B6153; background: #F6F1E6; color: #1B1713; border-radius: 0; }
+.key-form label[hidden] { display: none; }
+.key-actions { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.2rem; }
+.key-actions button { border-radius: 0; }
+.key-actions .primary { background: #1B1713; color: #E8DFCC; border-color: #1B1713; }
+.key-actions .ghost { background: transparent; color: #1B1713; border: 1px solid #1B1713; }
+@media (max-width: 640px) {
+  .actions { flex-wrap: wrap; }
+  .actions button { flex: 1 1 auto; padding: .55rem .9rem; font-size: 1.05rem; }
+}
