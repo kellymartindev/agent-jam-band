@@ -45,9 +45,23 @@ export interface HouseSpot {
   /** 0 the first time this section plays, 1 the second time (second drop, or the song looping), ... */
   occurrence: number;
   seed: string;
+  /** What the listener's latest steer asked for, in the words the house band understands */
+  mood: { half: boolean; dark: boolean; bright: boolean; busy: boolean; sparse: boolean };
 }
 
-export function spotOf(plan: BlockPlan | undefined, ctx: MemoryCtx | undefined): HouseSpot {
+/** Reads a steer the way the house band can: a few plain words, nothing more. */
+export function moodOf(text: string | undefined): HouseSpot['mood'] {
+  const t = (text ?? '').toLowerCase();
+  return {
+    half: /half[- ]?time|halftime|slower feel/.test(t),
+    dark: /dark|moody|minor|sad|heavy|deeper/.test(t),
+    bright: /bright|happy|light|uplift|major|sunny/.test(t),
+    busy: /busy|busier|more energy|faster feel|intense|hype|harder/.test(t),
+    sparse: /sparse|minimal|chill|calm|quiet|space|strip/.test(t),
+  };
+}
+
+export function spotOf(plan: BlockPlan | undefined, ctx: MemoryCtx | undefined, steerText?: string): HouseSpot {
   const section = plan?.section ?? 'drop';
   const blockInSection = plan ? Math.floor((plan.sectionBar - 1) / 4) : 0;
   const lastBlock = plan ? plan.sectionBar + 4 > plan.sectionBars : true;
@@ -64,7 +78,7 @@ export function spotOf(plan: BlockPlan | undefined, ctx: MemoryCtx | undefined):
     byName.set(section, list);
     occurrence = i;
   }
-  return { section, blockInSection, lastBlock, occurrence, seed: ctx?.sessionId ?? 'house' };
+  return { section, blockInSection, lastBlock, occurrence, seed: ctx?.sessionId ?? 'house', mood: moodOf(steerText) };
 }
 
 /** Remembers this player's first block of a section occurrence and, when the same section played before, points back at that earlier phrase. */
@@ -116,7 +130,23 @@ const AGAIN: Record<'drums' | 'bass' | 'keys' | 'melody', string> = {
 };
 
 /** The line a player says: only on the first block of a section. */
-export function houseWhy(agent: 'drums' | 'bass' | 'keys' | 'melody', spot: HouseSpot): string {
+const heardSteer = new Map<string, string>();
+const STEER_LINES: Record<'half' | 'dark' | 'bright' | 'busy' | 'sparse', Record<'drums' | 'bass' | 'keys' | 'melody', string>> = {
+  half: { drums: 'Half-time: kick on the one, snare on three.', bass: 'Laying back with it.', keys: 'Letting the chords ring longer.', melody: 'Giving the hook more room.' },
+  dark: { drums: 'Thinning the hats, keeping it low.', bass: 'Staying low and heavy.', keys: 'Dropping the chords an octave.', melody: 'Taking the hook down low.' },
+  bright: { drums: 'Opening it up.', bass: 'Lifting it a little.', keys: 'Chords up an octave, brighter.', melody: 'Hook up high.' },
+  busy: { drums: 'Sixteenth hats, more push.', bass: 'Keeping it locked under all that.', keys: 'Staying on the offbeats.', melody: 'Riding it.' },
+  sparse: { drums: 'Pulling back to the essentials.', bass: 'Just the roots.', keys: 'Lots of space.', melody: 'Fewer notes.' },
+};
+
+export function houseWhy(agent: 'drums' | 'bass' | 'keys' | 'melody', spot: HouseSpot, steerText?: string): string {
+  // The first block after a steer: each player says how it's following it.
+  const key = `${spot.seed}:${agent}`;
+  if ((steerText ?? '') !== (heardSteer.get(key) ?? '')) {
+    heardSteer.set(key, steerText ?? '');
+    const m = (['half', 'dark', 'bright', 'busy', 'sparse'] as const).find((k) => spot.mood[k]);
+    if (m) return STEER_LINES[m][agent];
+  }
   if (spot.blockInSection !== 0) return '';
   if (spot.occurrence > 0) return AGAIN[agent];
   return pick(rng(`${spot.seed}:${spot.section}:${agent}:line`), LINES[spot.section][agent]);
@@ -189,6 +219,16 @@ export function houseDrums(m: Meter, spot: HouseSpot): DrumBar[] {
         if (lastBar && spot.lastBlock) kick = [a[0]];
         break;
     }
+    if (spot.mood.half && spot.section !== 'breakdown') {
+      // Half-time: kick on the one, snare only on beat three, hats thinned to quarters.
+      kick = kick.length ? [a[0]] : [];
+      snare = four && snare.length ? [a[2]] : snare.slice(0, 1);
+      ghost.length = 0;
+      hat = hat.filter((s) => beats.includes(s) || s % 4 === 0);
+    }
+    if (spot.mood.sparse) { hat = hat.filter((s) => s % 4 === 0); ghost.length = 0; }
+    if (spot.mood.busy && spot.section !== 'breakdown') hat = every(1);
+    if (spot.mood.dark) hat = hat.filter((s) => s % 2 === 0);
     const snareAll = [...new Set([...snare, ...ghost])].sort((x, y) => x - y);
     const snareVel = Array.from({ length: n }, (_, i) => (ghost.includes(i) && !snare.includes(i) ? 0.3 : spot.section === 'breakdown' ? 0.5 : 0.8));
     const hatVel = Array.from({ length: n }, (_, i) => (beats.includes(i) ? 0.7 : 0.45 + (rng(`${spot.seed}:h:${bar}:${i}`)() * 0.2)));
@@ -198,7 +238,7 @@ export function houseDrums(m: Meter, spot: HouseSpot): DrumBar[] {
 
 // ---------- Bass ----------
 
-export function houseBass(key: string, plan: BlockPlan | undefined, drums: DrumBar[], m: Meter, spot: HouseSpot): BassBar[] {
+function houseBassRaw(key: string, plan: BlockPlan | undefined, drums: DrumBar[], m: Meter, spot: HouseSpot): BassBar[] {
   const chords = chordsFor(plan, key);
   const n = m.stepsPerBar;
   return chords.map((c, bar) => {
@@ -225,13 +265,14 @@ export function houseBass(key: string, plan: BlockPlan | undefined, drums: DrumB
 
 // ---------- Keys ----------
 
-export function houseKeys(key: string, plan: BlockPlan | undefined, m: Meter, spot: HouseSpot): ChordBar[] {
+function houseKeysRaw(key: string, plan: BlockPlan | undefined, m: Meter, spot: HouseSpot): ChordBar[] {
   const chords = chordsFor(plan, key);
   const n = m.stepsPerBar;
   const a = m.accentSteps;
   // The voicing opens up (root moves to the top) each time the song comes round again.
   const voice = (tones: number[]) => {
-    const base = tones.map((t, i) => midi(t, 3) + (i > 0 && midi(t, 3) < midi(tones[0], 3) ? 12 : 0));
+    const oct = spot.mood.dark ? 2 : spot.mood.bright ? 4 : 3;
+    const base = tones.map((t, i) => midi(t, oct) + (i > 0 && midi(t, oct) < midi(tones[0], oct) ? 12 : 0));
     const inv = spot.occurrence % 3;
     const out = base.map((x, i) => (i < inv ? x + 12 : x));
     return out.sort((x, y) => x - y).map(nameOf);
@@ -264,14 +305,14 @@ function hook(seed: string, n: number): { step: number; deg: number; dur: string
   });
 }
 
-export function houseMelody(key: string, m: Meter, spot: HouseSpot): MelodyBar[] {
+function houseMelodyRaw(key: string, m: Meter, spot: HouseSpot): MelodyBar[] {
   const n = m.stepsPerBar;
   const tonic = tonicOf(key);
   const scale = isMinorKey(key) ? [0, 3, 5, 7, 10] : [0, 2, 4, 7, 9];
   const note = (deg: number, lift = 0) => {
     const d = deg + lift;
     const oct = Math.floor(d / scale.length);
-    return nameOf(midi(tonic + scale[((d % scale.length) + scale.length) % scale.length], 4) + 12 * oct);
+    return nameOf(midi(tonic + scale[((d % scale.length) + scale.length) % scale.length], spot.mood.dark ? 3 : spot.mood.bright ? 5 : 4) + 12 * oct);
   };
   const phrase = hook(spot.seed, n);
   // Each loop of the song, the hook's answer bar lifts a step.
@@ -299,3 +340,18 @@ export function houseMelody(key: string, m: Meter, spot: HouseSpot): MelodyBar[]
     }
   });
 }
+
+/** Every house part is tidied before it plays: inside the bar, in step order, one entry per step (the reply schemas require that, and a steer can change the meter under a part). */
+function tidy<T extends { step: number }>(bars: T[][], n: number): T[][] {
+  return bars.map((bar) => {
+    const seen = new Set<number>();
+    return bar
+      .filter((x) => Number.isInteger(x.step) && x.step >= 0 && x.step < n)
+      .sort((a, b) => a.step - b.step)
+      .filter((x) => (seen.has(x.step) ? false : (seen.add(x.step), true)));
+  });
+}
+
+export const houseBass = (key: string, plan: BlockPlan | undefined, drums: DrumBar[], m: Meter, spot: HouseSpot): BassBar[] => tidy(houseBassRaw(key, plan, drums, m, spot), m.stepsPerBar);
+export const houseKeys = (key: string, plan: BlockPlan | undefined, m: Meter, spot: HouseSpot): ChordBar[] => tidy(houseKeysRaw(key, plan, m, spot), m.stepsPerBar);
+export const houseMelody = (key: string, m: Meter, spot: HouseSpot): MelodyBar[] => tidy(houseMelodyRaw(key, m, spot), m.stepsPerBar);

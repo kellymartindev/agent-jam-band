@@ -480,8 +480,8 @@ export async function drumsAgent(state: JamState, ctx?: Ctx, plan?: BlockPlan): 
     () => runAgent('drums', drumsSystem(m), user, drumsReplySchema(m.stepsPerBar)),
     () => {
       if (houseMode()) {
-        const spot = spotOf(plan, ctx);
-        return { bars: houseDrums(m, spot), source: 'house band', why: houseWhy('drums', spot), echoes: echoFor('drums', spot, ctx) };
+        const spot = spotOf(plan, ctx, state.steer?.text);
+        return { bars: houseDrums(m, spot), source: 'house band', why: houseWhy('drums', spot, state.steer?.text), echoes: echoFor('drums', spot, ctx) };
       }
       const previous = previousDrums(state);
       return previous ? { bars: previous, source: 'previous block' } : { bars: defaultDrums(m), source: 'built-in pattern' };
@@ -505,8 +505,8 @@ export async function bassAgent(state: JamState, drums: DrumBar[], ctx?: Ctx, pl
     () => runAgent('bass', bassSystem(m), user, bassReplySchema(m.stepsPerBar, drums)),
     () => {
       if (houseMode()) {
-        const spot = spotOf(plan, ctx);
-        return { bars: houseBass(state.key, plan, drums, m, spot), source: 'house band', why: houseWhy('bass', spot), echoes: echoFor('bass', spot, ctx) };
+        const spot = spotOf(plan, ctx, state.steer?.text);
+        return { bars: houseBass(state.key, plan, drums, m, spot), source: 'house band', why: houseWhy('bass', spot, state.steer?.text), echoes: echoFor('bass', spot, ctx) };
       }
       const previous = previousBass(state);
       return previous
@@ -533,8 +533,8 @@ export async function keysAgent(state: JamState, drums: DrumBar[], bass: BassBar
     () => runAgent('keys', keysSystem(m), user, keysReplySchema(m.stepsPerBar)),
     () => {
       if (houseMode()) {
-        const spot = spotOf(plan, ctx);
-        return { bars: houseKeys(state.key, plan, m, spot), source: 'house band', why: houseWhy('keys', spot), echoes: echoFor('keys', spot, ctx) };
+        const spot = spotOf(plan, ctx, state.steer?.text);
+        return { bars: houseKeys(state.key, plan, m, spot), source: 'house band', why: houseWhy('keys', spot, state.steer?.text), echoes: echoFor('keys', spot, ctx) };
       }
       const previous = previousKeys(state);
       return previous ? { bars: previous, source: 'previous block' } : { bars: defaultKeys(state.key), source: 'built-in pattern' };
@@ -573,8 +573,8 @@ export async function melodyAgent(state: JamState, drums: DrumBar[], bass: BassB
     },
     () => {
       if (houseMode()) {
-        const spot = spotOf(plan, ctx);
-        return { bars: shapeMelody(houseMelody(state.key, m, spot), windows), source: 'house band', why: houseWhy('melody', spot), echoes: echoFor('melody', spot, ctx) };
+        const spot = spotOf(plan, ctx, state.steer?.text);
+        return { bars: shapeMelody(houseMelody(state.key, m, spot), windows), source: 'house band', why: houseWhy('melody', spot, state.steer?.text), echoes: echoFor('melody', spot, ctx) };
       }
       const previous = previousMelody(state);
       return { bars: shapeMelody(previous ?? defaultMelody(state.key), windows), source: previous ? 'previous block' : 'built-in pattern' };
