@@ -186,7 +186,7 @@ app.innerHTML = `
         <h2>Band chat</h2>
         <div class="lineup"><p>Tonight's band. Press Start and they introduce themselves here.</p><ul><li class="msg drums"><span class="who sticker"><span class="hello" aria-hidden="true">HELLO my name is</span><span class="nm">Drums</span></span></li><li class="msg bass"><span class="who sticker"><span class="hello" aria-hidden="true">HELLO my name is</span><span class="nm">Bass</span></span></li><li class="msg keys"><span class="who sticker"><span class="hello" aria-hidden="true">HELLO my name is</span><span class="nm">Keys</span></span></li><li class="msg melody"><span class="who sticker"><span class="hello" aria-hidden="true">HELLO my name is</span><span class="nm">Melody</span></span></li><li class="msg vox"><span class="who sticker"><span class="hello" aria-hidden="true">HELLO my name is</span><span class="nm">Vox</span></span></li></ul></div>
         <ol id="log" aria-live="polite"></ol>
-        <section class="steer-panel" id="steerPanel" hidden>
+        <section class="steer-panel" id="steerPanel" hidden inert>
           <h2 class="sr-only">Steer the band</h2>
           <form id="steerForm" class="steer-row" autocomplete="off">
             <label class="steer-box"><i class="k-steer" aria-hidden="true"></i><input id="steerText" type="text" maxlength="200" placeholder="Steer: switch to 7/8, go darker, make it jazzier…" aria-label="Steer the band" /></label>
@@ -352,6 +352,7 @@ function setMode(mode: Mode) {
   stopBtn.disabled = mode === 'idle';
   recBtn.disabled = mode !== 'playing';
   steerPanel.hidden = mode !== 'playing';
+  steerPanel.inert = mode !== 'playing'; // dimmed and inactive until the band plays
   if (mode !== 'playing') {
     steerText.value = '';
     steerNote.textContent = '';
