@@ -328,3 +328,19 @@ dialog.key-dialog form.key-form h2 { margin: 0 0 .6rem !important; font: 800 1.6
   .actions { flex-wrap: wrap; }
   .actions button { flex: 1 1 auto; padding: .55rem .9rem; font-size: 1.05rem; }
 }
+
+/* Readability pass (Nov 26, Kelly: text too small, worst on the name tags). Everything scales up about 10%, and no
+   text sits below about 11px on a laptop screen. */
+html { font-size: clamp(14px, min(1.1vw, 1.95vh), 22px); }
+label, .field.vibe label, .pop-overrides label, .studio > summary b, .studio-state, .steer-note, .pop-note,
+.legend-pop p, .studio-why, .dock > .credits-drawer > summary, .msg .head, .meta dt, .sec-label, .graph-empty { font-size: 0.9rem; }
+.sum-label, .tok span, .sw { font-size: 0.85rem; }
+.credits { font-size: 0.8rem; }
+.next, .sec-bar, .sum-value, .chip > summary, .legend-pop { font-size: 0.95rem; }
+.msg .who.sticker { min-width: 8rem; }
+.msg .who.sticker .hello { font-size: 0.84rem; font-weight: 700; padding: 0.18rem 0.5rem; }
+.msg .who.sticker .nm { font-size: 1.45rem; line-height: 1.1; padding: 0.15rem 0.6rem 0.22rem; }
+.lineup p { font-size: 1rem; }
+.key-dialog .key-form p { font-size: .95rem; }
+.key-form label { font-size: .85rem; }
+@media (max-width: 640px) { html { font-size: 15px; } }
