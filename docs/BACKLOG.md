@@ -20,6 +20,7 @@ Proposed by Claude, Kelly to confirm: the open-source showcase that makes a hiri
 
 ## Ideas
 
+- **House band plays each genre its own way** (Kelly, Nov 26, asked if the no-key band can do other sounds). Today a genre word ("genre: jazz", "drum and bass" in the vibe) changes tempo, key and instruments, but the house band's patterns stay the same lo-fi shapes. Next step if visitors use it: a drum, bass and chord rhythm per genre (swing for jazz, breakbeats for dnb, four-on-the-floor for house). About half a day.
 - **Bar numbers skip after a steer** (the discarded blocks keep their numbers, so "Playing bars 13–16" can jump to 25–28). Cosmetic; renumber only if testers notice.
 
 ## Done
