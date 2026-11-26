@@ -2,6 +2,10 @@
 
 Format and rules: `kellymartin-dev/docs/HOW-WE-WORK.md`.
 
+## Goal
+
+Proposed by Claude, Kelly to confirm: the open-source showcase that makes a hiring manager reach out: it works for every visitor (house band or their own key), and a short write-up explains how the agents listen to each other.
+
 ## Now
 
 - (none)
