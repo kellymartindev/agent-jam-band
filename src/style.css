@@ -282,3 +282,24 @@ button.info:hover, button.info[aria-expanded='true'] { color: var(--text); borde
 .msg .who.sticker .nm { color: #15161c; font: 400 1.05rem/1.15 'Permanent Marker', 'Marker Felt', 'Comic Sans MS', cursive; text-align: center; padding: 0.1rem 0.5rem 0.18rem; }
 .msg.drums { --tilt: -2.5deg; } .msg.bass { --tilt: 1.8deg; } .msg.keys { --tilt: -1.2deg; } .msg.melody { --tilt: 2.4deg; } .msg.vox { --tilt: -1.8deg; } .msg.conductor { --tilt: 1deg; }
 @media (prefers-reduced-motion: reduce) { .msg .who.sticker { transform: none; } }
+
+/* ===== Design system pass (Nov 26): the dark desk with grain, cream text, square corners, Archivo + Courier
+   Prime, clay as the band's one colour. The four players keep their own dot colours, and the HELLO stickers stay
+   the quirk. ===== */
+:root {
+  --bg: #12100D; --panel: #1C1915; --panel-2: #26221D; --line: #3A3129; --line-2: #5E554A;
+  --text: #E8DFCC; --muted: #A89C86; --faint: #988C78; --soft: #C9BEA8;
+  --accent: #C4704F; --conductor: #E8DFCC; --steer: #C4704F;
+  --r: 0px; --r-lg: 0px; --shadow: 0 0.6rem 1.6rem rgba(0, 0, 0, 0.5);
+}
+body {
+  font-family: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--bg);
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22180%22 height=%22180%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%22.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/><feColorMatrix values=%220 0 0 0 1 0 0 0 0 .95 0 0 0 0 .85 0 0 0 .08 0%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/></svg>');
+}
+h1 { font-family: 'Archivo', sans-serif; font-weight: 800; font-stretch: 70%; text-transform: uppercase; letter-spacing: .02em; }
+button, input, select, textarea, details, summary, .panel, .card { border-radius: 0 !important; }
+small, code, kbd, label, summary, .label, .muted, .hint { font-family: 'Courier Prime', ui-monospace, monospace; }
+input, textarea, .graph, #graph, .memory, .mem-canvas, .steer, .steer-row { border-radius: 0 !important; }
+.graph, #graph { background: #0E0C0A !important; }
+.graph-host { border-radius: 0 !important; background: #0E0C0A !important; border: 1px solid var(--line); }
