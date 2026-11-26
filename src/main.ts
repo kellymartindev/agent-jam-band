@@ -184,6 +184,7 @@ app.innerHTML = `
     <div class="split">
       <section class="panel chat">
         <h2>Band chat</h2>
+        <div class="lineup"><p>Tonight's band. Press Start and they introduce themselves here.</p><ul><li class="msg drums"><span class="who sticker"><span class="hello" aria-hidden="true">HELLO my name is</span><span class="nm">Drums</span></span></li><li class="msg bass"><span class="who sticker"><span class="hello" aria-hidden="true">HELLO my name is</span><span class="nm">Bass</span></span></li><li class="msg keys"><span class="who sticker"><span class="hello" aria-hidden="true">HELLO my name is</span><span class="nm">Keys</span></span></li><li class="msg melody"><span class="who sticker"><span class="hello" aria-hidden="true">HELLO my name is</span><span class="nm">Melody</span></span></li><li class="msg vox"><span class="who sticker"><span class="hello" aria-hidden="true">HELLO my name is</span><span class="nm">Vox</span></span></li></ul></div>
         <ol id="log" aria-live="polite"></ol>
         <section class="steer-panel" id="steerPanel" hidden>
           <h2 class="sr-only">Steer the band</h2>

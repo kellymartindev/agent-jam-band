@@ -279,7 +279,7 @@ button.info:hover, button.info[aria-expanded='true'] { color: var(--text); borde
   box-shadow: 0 0.1rem 0.35rem rgba(0, 0, 0, 0.45); transform: rotate(var(--tilt, -2deg)); letter-spacing: 0; text-transform: none; min-width: 6.2rem; margin: 0.1rem 0 0.15rem; }
 .msg .who.sticker::before { display: none; }
 .msg .who.sticker .hello { background: var(--c); color: #07080c; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.04em; text-align: center; padding: 0.12rem 0.4rem; text-transform: none; }
-.msg .who.sticker .nm { color: #15161c; font: 400 1.05rem/1.15 'Permanent Marker', 'Marker Felt', 'Comic Sans MS', cursive; text-align: center; padding: 0.1rem 0.5rem 0.18rem; }
+.msg .who.sticker .nm { color: #15161c; font: 400 1.05rem/1.15 'Gochi Hand', 'Marker Felt', 'Comic Sans MS', cursive; text-align: center; padding: 0.1rem 0.5rem 0.18rem; }
 .msg.drums { --tilt: -2.5deg; } .msg.bass { --tilt: 1.8deg; } .msg.keys { --tilt: -1.2deg; } .msg.melody { --tilt: 2.4deg; } .msg.vox { --tilt: -1.8deg; } .msg.conductor { --tilt: 1deg; }
 @media (prefers-reduced-motion: reduce) { .msg .who.sticker { transform: none; } }
 
@@ -303,3 +303,10 @@ small, code, kbd, label, summary, .label, .muted, .hint { font-family: 'Courier 
 input, textarea, .graph, #graph, .memory, .mem-canvas, .steer, .steer-row { border-radius: 0 !important; }
 .graph, #graph { background: #0E0C0A !important; }
 .graph-host { border-radius: 0 !important; background: #0E0C0A !important; border: 1px solid var(--line); }
+/* Before the band plays, the lineup wears its HELLO stickers so the quirk shows from the first second. */
+.lineup { padding: 0.6rem 0; }
+.lineup p { margin: 0 0 0.8rem; font: 400 0.8rem/1.4 'Courier Prime', ui-monospace, monospace; color: var(--muted); }
+.lineup ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.9rem; }
+.lineup .msg { padding: 0; border: 0; background: none; }
+.chat:has(#log:not(:empty)) .lineup { display: none; }
+.steer-box, .steer-box input { border-radius: 0 !important; }
