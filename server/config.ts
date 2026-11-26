@@ -20,6 +20,9 @@ export function setLlmSettings(settings: LlmSettings | null) {
 
 const env = (name: string): string | undefined => (typeof process !== 'undefined' && process.env ? process.env[name] : undefined);
 
+/** True in the browser build when the visitor hasn't set a key: the house band plays. */
+export const houseMode = () => browserMode && !override;
+
 export function requireEnv(name: string): string {
   if (browserMode) throw new Error('No API key set, so the house band is playing.');
   const value = env(name)?.trim();

@@ -7,7 +7,8 @@ import { SOUND_PRESETS, isSoundPreset, type SoundPreset } from '../shared/preset
 import { VOX_ENABLED } from '../shared/flags.js';
 import { VOX_BRIEF, VOX_SECTION, VOX_STYLE, voxWindows, type VoxStyle, type VoxWindow } from '../shared/vox.js';
 import type { AgentReply, BassBar, ChordBar, ConductorOverrides, ConductorReply, ConductorSettings, DrumBar, JamState, MelodyBar, TokenUsage, VoxBar } from '../shared/types.js';
-import { config } from './config.js';
+import { config, houseMode } from './config.js';
+import { echoFor, houseBass, houseDrums, houseKeys, houseMelody, houseWhy, spotOf } from './houseband.js';
 import {
   defaultBass,
   defaultConductor,
@@ -281,6 +282,10 @@ async function runAgent<T>(name: string, system: string, user: string, schema: z
 interface Fallback<B> {
   bars: B[];
   source: string;
+  /** The house band (no key) says a line and can call back an earlier phrase, like the AI band. */
+  why?: string;
+  echoes?: EchoClaim | null;
+  house?: boolean;
 }
 
 type Ctx = MemoryCtx | undefined;
@@ -300,6 +305,11 @@ async function guarded<B>(
   fallback: () => Fallback<B>,
 ): Promise<AgentReply<B>> {
   const started = Date.now();
+  if (houseMode()) {
+    const { bars, why = '', echoes = null } = fallback();
+    if (ctx && !silent(bars)) remember(ctx, name, { bars, why, echoes, fallback: false });
+    return { why, bars, latencyMs: Date.now() - started, ...(echoes ? { echoed: true } : {}) };
+  }
   try {
     const { data, latencyMs, tokens } = await run();
     const { echoes = null, ...reply } = data;
@@ -469,6 +479,10 @@ export async function drumsAgent(state: JamState, ctx?: Ctx, plan?: BlockPlan): 
     ctx,
     () => runAgent('drums', drumsSystem(m), user, drumsReplySchema(m.stepsPerBar)),
     () => {
+      if (houseMode()) {
+        const spot = spotOf(plan, ctx);
+        return { bars: houseDrums(m, spot), source: 'house band', why: houseWhy('drums', spot), echoes: echoFor('drums', spot, ctx) };
+      }
       const previous = previousDrums(state);
       return previous ? { bars: previous, source: 'previous block' } : { bars: defaultDrums(m), source: 'built-in pattern' };
     },
@@ -490,6 +504,10 @@ export async function bassAgent(state: JamState, drums: DrumBar[], ctx?: Ctx, pl
     ctx,
     () => runAgent('bass', bassSystem(m), user, bassReplySchema(m.stepsPerBar, drums)),
     () => {
+      if (houseMode()) {
+        const spot = spotOf(plan, ctx);
+        return { bars: houseBass(state.key, plan, drums, m, spot), source: 'house band', why: houseWhy('bass', spot), echoes: echoFor('bass', spot, ctx) };
+      }
       const previous = previousBass(state);
       return previous
         ? { bars: lockBassToKick(previous, drums, state.key), source: 'previous block, re-locked to the kick' }
@@ -514,6 +532,10 @@ export async function keysAgent(state: JamState, drums: DrumBar[], bass: BassBar
     ctx,
     () => runAgent('keys', keysSystem(m), user, keysReplySchema(m.stepsPerBar)),
     () => {
+      if (houseMode()) {
+        const spot = spotOf(plan, ctx);
+        return { bars: houseKeys(state.key, plan, m, spot), source: 'house band', why: houseWhy('keys', spot), echoes: echoFor('keys', spot, ctx) };
+      }
       const previous = previousKeys(state);
       return previous ? { bars: previous, source: 'previous block' } : { bars: defaultKeys(state.key), source: 'built-in pattern' };
     },
@@ -550,6 +572,10 @@ export async function melodyAgent(state: JamState, drums: DrumBar[], bass: BassB
       return { ...out, data: { ...out.data, bars: shapeMelody(out.data.bars, windows) } };
     },
     () => {
+      if (houseMode()) {
+        const spot = spotOf(plan, ctx);
+        return { bars: shapeMelody(houseMelody(state.key, m, spot), windows), source: 'house band', why: houseWhy('melody', spot), echoes: echoFor('melody', spot, ctx) };
+      }
       const previous = previousMelody(state);
       return { bars: shapeMelody(previous ?? defaultMelody(state.key), windows), source: previous ? 'previous block' : 'built-in pattern' };
     },
